@@ -1,39 +1,76 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
+import pygame
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
+pygame.init()
 
-name: Upload Python Package
+# Set up the game window
+win_width = 500
+win_height = 600
+win = pygame.display.set_mode((win_width, win_height))
+pygame.display.set_caption("Flappy Bird")
 
-on:
-  release:
-    types: [published]
+# Load game images
+bird_image = pygame.image.load("bird.png")
+pipe_image = pygame.image.load("pipe.png")
+bg_image = pygame.image.load("background.png")
 
-permissions:
-  contents: read
+# Set up game variables
+bird_x = 50
+bird_y = 250
+bird_vel = 0
+gravity = 0.5
 
-jobs:
-  deploy:
+pipe_x = 500
+pipe_gap = 150
+pipe_top_height = 200
+pipe_bottom_height = win_height - pipe_top_height - pipe_gap
+pipe_top_y = 0
+pipe_bottom_y = pipe_top_height + pipe_gap
 
-    runs-on: ubuntu-latest
+score = 0
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build
-    - name: Build package
-      run: python -m build
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+# Game loop
+while True:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                bird_vel = -10
+
+    # Move bird
+    bird_vel += gravity
+    bird_y += bird_vel
+
+    # Move pipes
+    pipe_x -= 5
+    if pipe_x < -100:
+        pipe_x = win_width
+        pipe_top_height = random.randint(100, 300)
+        pipe_bottom_height = win_height - pipe_top_height - pipe_gap
+        pipe_top_y = 0
+        pipe_bottom_y = pipe_top_height + pipe_gap
+
+    # Check for collision with pipes
+    if bird_x + bird_image.get_width() > pipe_x and bird_x < pipe_x + pipe_image.get_width():
+        if bird_y < pipe_top_height or bird_y + bird_image.get_height() > pipe_bottom_y:
+            score = 0
+            bird_y = 250
+            pipe_x = win_width
+
+    # Draw game elements
+    win.blit(bg_image, (0, 0))
+    win.blit(pipe_image, (pipe_x, pipe_top_y))
+    win.blit(pipe_image, (pipe_x, pipe_bottom_y))
+    win.blit(bird_image, (bird_x, bird_y))
+    pygame.display.update()
+
+    # Increment score
+    if bird_x > pipe_x + pipe_image.get_width():
+        score += 1
+
+    # Display score
+    font = pygame.font.Font(None, 50)
+    score
